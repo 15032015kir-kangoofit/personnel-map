@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Расстановка персонала цеха сборки</title>
+  <meta name="description" content="Демо: расстановка персонала цеха сборки автомобилей">
+  <meta name="theme-color" content="#1f6feb">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Расстановка">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/theme.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Расстановка персонала · цех сборки</h1>
+    <button id="btn-install" class="btn primary" type="button" hidden>Установить</button>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button class="tab-btn active" role="tab" data-tab="map" aria-selected="true" type="button">Карта</button>
+    <button class="tab-btn" role="tab" data-tab="roster" aria-selected="false" type="button">Табель смены</button>
+    <button class="tab-btn" role="tab" data-tab="settings" aria-selected="false" type="button">Настройки</button>
+  </nav>
+
+  <main>
+    <!-- Вкладка «Карта» -->
+    <section id="tab-map" class="tab active" role="tabpanel">
+      <div id="dashboard" class="dash"></div>
+      <div class="map-toolbar">
+        <span class="muted">Вид:</span>
+        <div class="seg" id="view-toggle" role="group" aria-label="Вид отображения">
+          <button type="button" data-view="list">Список</button>
+          <button type="button" data-view="scheme">Схема</button>
+        </div>
+      </div>
+      <div class="legend" aria-label="Цвета статусов постов">
+        <span><i class="dot st-free"></i>Простой — 0 чел.</span>
+        <span><i class="dot st-low"></i>Укомплектован — 1 чел.</span>
+        <span><i class="dot st-full"></i>Укомплектован — 2 и более</span>
+      </div>
+      <div id="reserve"></div>
+      <div id="map-root"></div>
+    </section>
+
+    <!-- Вкладка «Табель смены» -->
+    <section id="tab-roster" class="tab" role="tabpanel" hidden>
+      <div class="btn-row">
+        <button id="btn-import-xlsx" class="btn" type="button">Импорт Excel</button>
+        <button id="btn-pdf" class="btn" type="button">Экспорт PDF</button>
+        <button id="btn-xlsx" class="btn" type="button">Экспорт Excel</button>
+        <button id="btn-archive" class="btn" type="button">Архив смен</button>
+        <button id="btn-save" class="btn primary" type="button">Сохранить/Изменить смену</button>
+      </div>
+      <div id="roster-root"></div>
+      <div class="btn-row roster-actions">
+        <button id="btn-add" class="btn" type="button">Добавить</button>
+        <button id="btn-del" class="btn danger" type="button">Удалить</button>
+      </div>
+      <div id="roster-panel"></div>
+    </section>
+
+    <!-- Вкладка «Настройки» -->
+    <section id="tab-settings" class="tab" role="tabpanel" hidden>
+      <div class="card">
+        <h2>Смена</h2>
+        <div class="form-row">
+          <label for="set-date">Дата смены</label>
+          <input type="date" id="set-date">
+        </div>
+        <div class="form-row">
+          <label for="set-type">Тип смены</label>
+          <select id="set-type">
+            <option value="day">День</option>
+            <option value="night">Ночь</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Цвет темы</h2>
+        <div class="seg theme-seg" id="theme-toggle" role="group" aria-label="Цвет темы">
+          <button type="button" data-theme-set="light">Светлая</button>
+          <button type="button" data-theme-set="dark">Темная</button>
+          <button type="button" data-theme-set="winter">Зимняя ❄</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Данные</h2>
+        <div class="btn-row">
+          <button id="btn-reset" class="btn danger" type="button">Сбросить смену</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Журнал (последние 50 записей)</h2>
+        <div id="history-root"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Плавающее окно табеля -->
+  <div id="float" class="float">
+    <button id="float-toggle" class="float-head" type="button" aria-expanded="false" aria-controls="float-body">
+      <span id="float-title">Табель · Присутствуют: 0/0</span>
+      <span id="float-arrow" aria-hidden="true">▸</span>
+    </button>
+    <div id="float-body" class="float-body" hidden></div>
+  </div>
+
+  <!-- Drawer поста -->
+  <div id="backdrop" class="backdrop"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawer-title"></h2>
+        <div id="drawer-sub" class="muted"></div>
+      </div>
+      <button id="drawer-close" class="icon-btn" type="button" aria-label="Закрыть">✕</button>
+    </div>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <!-- Библиотеки экспорта (CDN) — до локальных скриптов -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Локальные скрипты -->
+  <script src="js/state.js"></script>
+  <script src="js/render-map.js"></script>
+  <script src="js/render-roster.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/interactions.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
